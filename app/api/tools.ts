@@ -14,7 +14,7 @@ const openai = new OpenAI({
 export const openLinkTool = tool({
   name: "open_link",
   description:
-    "Open a URL and extract its content, preserving CSS but removing unnecessary elements",
+    "Open a URL and extract its content, removing unnecessary elements",
   parameters: z.object({
     url: z.string().describe("The URL to open, MUST be a valid URL"),
   }),
@@ -49,67 +49,10 @@ export const openLinkTool = tool({
         document.querySelectorAll(selector).forEach((el) => el.remove());
       });
 
-      // Extract CSS variables and important styles
-      const styles = new Set<string>();
-      document.querySelectorAll("*").forEach((element) => {
-        const style = element.getAttribute("style");
-        if (style) {
-          // Extract color-related styles
-          const colorStyles = style
-            .split(";")
-            .filter((s) => s.includes("color") || s.includes("background"))
-            .join(";");
-          if (colorStyles) {
-            styles.add(colorStyles);
-          }
-        }
-      });
+      // Get the cleaned HTML
+      const cleanedHtml = document.body.innerHTML;
 
-      // Get computed styles for important elements
-      const computedStyles = new Map<string, string>();
-      const importantElements = document.querySelectorAll(
-        "body, main, header, footer, nav, section, article, div"
-      );
-      importantElements.forEach((element) => {
-        const style = dom.window.getComputedStyle(element);
-        const backgroundColor = style.backgroundColor;
-        const color = style.color;
-        if (backgroundColor || color) {
-          const identifier = element.className || element.id || "element";
-          computedStyles.set(
-            identifier,
-            `background-color: ${backgroundColor}; color: ${color}`
-          );
-        }
-      });
-
-      // Clean up the content
-      const content = document.body.textContent?.trim() || "";
-
-      // Create a summary of the page
-      const summary = {
-        content: content,
-        styles: Array.from(styles),
-        computedStyles: Object.fromEntries(computedStyles),
-        title: document.title,
-        headings: {
-          h1: Array.from(document.querySelectorAll("h1")).map(
-            (el) => el.textContent || ""
-          ),
-          h2: Array.from(document.querySelectorAll("h2")).map(
-            (el) => el.textContent || ""
-          ),
-          h3: Array.from(document.querySelectorAll("h3")).map(
-            (el) => el.textContent || ""
-          ),
-        },
-        links: Array.from(document.querySelectorAll("a")).map((el) => ({
-          text: el.textContent || "",
-          href: el.getAttribute("href"),
-        })),
-      };
-
-      return JSON.stringify(summary, null, 2);
+      return JSON.stringify({ html: cleanedHtml }, null, 2);
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Failed to open link: ${error.message}`);
@@ -283,7 +226,14 @@ export const generateVideoTool = tool({
           role: "user" as const,
           content: message.content,
           parts: [{ text: message.content, type: "text" as const }],
-          experimental_attachments: message.experimental_attachments,
+          experimental_attachments: [
+            ...message.experimental_attachments,
+            {
+              url: "https://tgrn1v6iwvgijzza.public.blob.vercel-storage.com/public/audio/Bounce%20Back%202-HBlFciPwW56UcUMqqHq3mgracgRWJ8.mp3",
+              contentType: "audio/mpeg",
+              name: "background-music.mp3",
+            },
+          ],
         },
         model: "chat-model-reasoning-3" as const,
         action: "message" as const,
