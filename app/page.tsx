@@ -1,6 +1,5 @@
 "use client";
 
-import React, { PropsWithChildren } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef } from "react";
 import Markdown, { Components } from "react-markdown";
@@ -23,23 +22,6 @@ interface StreamEvent {
     type: string;
     text: string;
   }>;
-}
-
-export function ShimmerText(props: PropsWithChildren<{ className?: string }>) {
-  return (
-    <div className={`relative ${props?.className}`}>
-      <span
-        className="relative bg-clip-text text-transparent animate-shimmer"
-        style={{
-          backgroundImage:
-            "linear-gradient(-45deg, gray 40%, white 50%, gray 60%)",
-          backgroundSize: "300%",
-        }}
-      >
-        {props.children}
-      </span>
-    </div>
-  );
 }
 
 const markdownComponents: Components = {
@@ -295,7 +277,7 @@ export default function Page() {
         ) : (
           <div className="flex items-center gap-2">
             <Loader2Icon className="animate-spin h-5 w-5" />
-            <ShimmerText>Here should be a fancy animation...</ShimmerText>
+            <span>Here should be a fancy animation...</span>
           </div>
         )}
       </div>
