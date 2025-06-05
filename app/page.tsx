@@ -1,42 +1,29 @@
 "use client";
-import React, { useState } from "react";
+
+import { useChat } from "@ai-sdk/react";
 
 export default function Page() {
-  const [stream, setStream] = useState<string>("");
+  const { input, setInput, append, data, status } = useChat();
+
+  console.log(data);
 
   return (
-    <>
-      <form
-        className=""
-        onSubmit={async (e) => {
-          e.preventDefault();
-
-          const formData = new FormData(e.target as HTMLFormElement);
-          const url = formData.get("url") as string;
-
-          const response = await fetch("/api", {
-            method: "POST",
-            body: JSON.stringify({ url }),
-          });
-
-          const reader = response.body?.getReader();
-          if (!reader) return;
-
-          const decoder = new TextDecoder();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const text = decoder.decode(value, { stream: true });
-            setStream((old) => old + text);
+    <div>
+      <input
+        value={input}
+        onChange={(event) => {
+          setInput(event.target.value);
+        }}
+        onKeyDown={async (event) => {
+          if (event.key === "Enter") {
+            append({ content: input, role: "user" });
+            setInput("");
           }
         }}
-      >
-        <h1>shipshow</h1>
-        <p>you ship your product, and we will show it to the world</p>
-        <textarea name="url" className="border" />
-        <button>Ship</button>
-      </form>
-      <pre>{JSON.stringify(stream, null, 2)}</pre>
-    </>
+      />
+
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+      {status}
+    </div>
   );
 }
