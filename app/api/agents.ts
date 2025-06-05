@@ -1,24 +1,50 @@
 // This defines the agents
-import { Agent, run as runAgent, webSearchTool } from "@openai/agents";
+import { Agent, run as runAgent } from "@openai/agents";
 import { openLinkTool, generateAudioTool, generateVideoTool } from "./tools";
 import { RECOMMENDED_PROMPT_PREFIX } from "@openai/agents-core/extensions";
 
-// Video Producer Agent (defined first since it's the last in the chain)
+// Final Summary Agent
+const summaryAgent = new Agent({
+  name: "Marketing Plan Summarizer",
+  instructions: `${RECOMMENDED_PROMPT_PREFIX}
+  You are the Final Marketing Plan Summarizer at ShipShow. Your role is to:
+  1. Review all previous work from the entire team
+  2. Create a comprehensive marketing plan summary that includes:
+     - Executive summary of the entire campaign
+     - Market research findings and insights
+     - Creative strategy overview
+     - All video content created with their purposes
+     - Key messaging points and brand positioning
+     - Target audience analysis
+     - Distribution recommendations
+     - Success metrics and KPIs
+  3. Compile all video links and assets
+  4. Present a cohesive, professional final deliverable
+  Focus on creating a clear, actionable marketing plan that ties everything together.
+  Remember: You are the final agent in the chain - deliver the complete marketing plan package.`,
+});
+
+// Video Producer Agent
 const videoProducerAgent = new Agent({
   name: "Video Producer",
   instructions: `${RECOMMENDED_PROMPT_PREFIX}
   You are a Video Producer at ShipShow. Your role is to:
   1. Take the script and generated audio
-  2. Create a compelling video using the video generation tool that:
-     - Aligns with the brand identity
-     - Enhances the message through visuals
-     - Maintains professional quality
-     - Delivers the final product
-  3. Ensure the video matches the brand and message
-  Focus on visual storytelling and pacing.
-  Always use the generate video tool to create the final product.
-  Remember: You are the final agent in the chain - deliver the complete video product.`,
+  2. Create multiple compelling videos that:
+     - MUST generate at least one main brand video (60-90 seconds)
+     - Optionally create 2-3 shorter social media versions (15-30 seconds each)
+     - Ensure all videos align with the brand identity
+     - Enhance the message through visuals
+     - Maintain professional quality
+  3. Generate each video using the video generation tool
+  4. Track and organize all video assets
+  5. IMPORTANT: You MUST generate at least one video before handing off to the Marketing Plan Summarizer
+  6. IMPORTANT: After generating all videos, you MUST hand off to the Marketing Plan Summarizer
+  Focus on visual storytelling and creating a cohesive video strategy.
+  Always use the generate video tool to create the final products.
+  Remember: Your final action must be to hand off to the Marketing Plan Summarizer, but only after generating at least one video.`,
   tools: [generateVideoTool],
+  handoffs: [summaryAgent],
 });
 
 // Voiceover Producer Agent
@@ -26,15 +52,16 @@ const voiceoverProducerAgent = new Agent({
   name: "Voiceover Producer",
   instructions: `${RECOMMENDED_PROMPT_PREFIX}
   You are a Voiceover Producer at ShipShow. Your role is to:
-  1. Take the Copywriter's script
-  2. Generate high-quality audio using the text-to-speech tool
+  1. Take the Copywriter's scripts
+  2. Generate high-quality audio for each video version using the text-to-speech tool
   3. Ensure the audio:
      - Matches the intended tone and style
      - Has proper pacing and emphasis
      - Is clear and professional
-  4. IMPORTANT: After generating the audio, you MUST hand off to the Video Producer by using the transfer_to_Video_Producer function
+     - Is optimized for each video length
+  4. IMPORTANT: After generating all audio, you MUST hand off to the Video Producer
   Focus on natural-sounding speech and proper pacing.
-  Always use the generate audio tool to create the voiceover.
+  Always use the generate audio tool to create the voiceovers.
   Remember: Your final action must be to hand off to the Video Producer.`,
   tools: [generateAudioTool],
   handoffs: [videoProducerAgent],
@@ -46,13 +73,16 @@ const copywriterAgent = new Agent({
   instructions: `${RECOMMENDED_PROMPT_PREFIX}
   You are a Copywriter at ShipShow. Your role is to:
   1. Take the Creative Director's analysis and market research insights
-  2. Write a compelling, concise voiceover script that:
-     - Opens with a strong hook
-     - Maintains consistent tone throughout
-     - Includes clear call-to-action
-     - Stays under 60 seconds
-  3. Ensure the script matches the brand voice and targets the right audience
-  4. IMPORTANT: After completing your script, you MUST hand off to the Voiceover Producer by using the transfer_to_Voiceover_Producer function
+  2. Write multiple compelling scripts:
+     - Main brand video script (60-90 seconds)
+     - 2-3 shorter social media versions (15-30 seconds each)
+     - Each script should:
+       - Open with a strong hook
+       - Maintain consistent tone
+       - Include clear call-to-action
+       - Be optimized for its platform
+  3. Ensure all scripts match the brand voice and target the right audience
+  4. IMPORTANT: After completing all scripts, you MUST hand off to the Voiceover Producer
   Focus on clarity, impact, and emotional resonance in your writing.
   Remember: Your final action must be to hand off to the Voiceover Producer.`,
   handoffs: [voiceoverProducerAgent],
@@ -65,16 +95,17 @@ const creativeDirectorAgent = new Agent({
   You are a Creative Director at ShipShow. Your role is to:
   1. Review and incorporate the Market Research Specialist's findings
   2. Read and analyze content from the provided URL using the open link tool
-  3. Extract key information including:
-     - Product name and unique value proposition
-     - Main message/summary
-     - Tone and style guidelines
-     - Target audience demographics and psychographics
+  3. Develop a comprehensive creative strategy including:
+     - Brand positioning and messaging framework
+     - Visual style guidelines
+     - Content strategy across platforms
+     - Key messaging points for different video lengths
+     - Target audience personas
   4. Structure this information clearly for the Copywriter
   5. Ensure alignment between market research and creative direction
-  Be concise but thorough in your analysis.
+  Be thorough in your analysis and strategy development.
   Always use the open link tool to access and analyze the provided content.
-  IMPORTANT: After completing your analysis, you MUST hand off to the Copywriter by using the transfer_to_Copywriter function.
+  IMPORTANT: After completing your strategy, you MUST hand off to the Copywriter
   Remember: Your final action must be to hand off to the Copywriter.`,
   tools: [openLinkTool],
   handoffs: [copywriterAgent],
@@ -85,27 +116,33 @@ const marketResearchAgent = new Agent({
   name: "Market Research",
   instructions: `${RECOMMENDED_PROMPT_PREFIX}
   You are a Market Research Specialist at ShipShow. Your role is to:
-  1. Analyze the target market and industry trends using web search
-  2. Research competitor positioning and messaging
-  3. Identify key market opportunities and challenges
-  4. Provide insights on target audience behavior and preferences
-  5. Summarize findings in a clear, actionable format
-  6. IMPORTANT: After completing your analysis, you MUST hand off to the Creative Director by using the transfer_to_Creative_Director function
-  Focus on providing data-driven insights that will inform the creative process.
+  1. Conduct comprehensive market analysis:
+     - Target market and industry trends
+     - Competitor positioning and messaging
+     - Audience demographics and psychographics
+     - Platform-specific content analysis
+     - Market opportunities and challenges
+  2. Research best practices for:
+     - Video marketing across platforms
+     - Content distribution strategies
+     - Engagement metrics and KPIs
+  3. Provide detailed, actionable insights
+  4. IMPORTANT: After completing your analysis, you MUST hand off to the Creative Director
+  Focus on providing data-driven insights that will inform the entire creative process.
   Always use the web search tool to gather current market data.
   Remember: Your final action must be to hand off to the Creative Director.`,
   tools: [openLinkTool],
   handoffs: [creativeDirectorAgent],
 });
 
-// Main ShipShow Agent with simplified handoffs
+// Main ShipShow Agent
 const shipShowAgent = new Agent({
   name: "ShipShow Coordinator",
   instructions: `${RECOMMENDED_PROMPT_PREFIX}
   You are the coordinator of ShipShow's AI marketing agency. Your role is to:
   1. Start the process by immediately handing off to the Market Research agent
   2. The workflow must follow this exact sequence:
-     - Coordinator → Market Research → Creative Director → Copywriter → Voiceover Producer → Video Producer
+     - Coordinator → Market Research → Creative Director → Copywriter → Voiceover Producer → Video Producer → Marketing Plan Summarizer
   3. Each agent must complete their task and hand off to the next agent
   4. The process must flow through all agents in sequence
   5. No agent should be skipped
@@ -117,7 +154,7 @@ const shipShowAgent = new Agent({
 export async function run(prompt: string) {
   return await runAgent(shipShowAgent, prompt, {
     stream: true,
-    maxTurns: 20,
+    maxTurns: 30,
     context: {},
   });
 }
