@@ -117,6 +117,7 @@ const shipShowAgent = new Agent({
 export async function run(prompt: string) {
   return await runAgent(shipShowAgent, prompt, {
     stream: true,
+    maxTurns: 20,
     context: {},
   });
 }

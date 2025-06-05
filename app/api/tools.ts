@@ -33,17 +33,38 @@ export const openLinkTool = tool({
 // Tool to generate audio from text using OpenAI TTS
 export const generateAudioTool = tool({
   name: "generate_audio",
-  description: "Generate audio from text using OpenAI TTS",
+  description:
+    "Generate a short voiceover audio (10-40 seconds) for video using OpenAI TTS",
   parameters: z.object({
-    text: z.string(),
+    text: z
+      .string()
+      .describe(
+        "The voiceover script, should be concise and clear for a 10-40 second video"
+      ),
     voice: z
       .enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"])
-      .default("nova"),
+      .default("nova")
+      .describe("Voice to use for the voiceover"),
     model: z.enum(["tts-1", "tts-1-hd"]).default("tts-1"),
     speed: z.number().min(0.25).max(4.0).default(1.0),
   }),
   execute: async ({ text, voice, model, speed }) => {
     try {
+      // Estimate duration based on text length (roughly 15 chars per second)
+      const estimatedDuration = Math.ceil(text.length / 15);
+
+      // Warn if the script is too long or too short
+      if (estimatedDuration > 40) {
+        throw new Error(
+          "Script is too long for a video voiceover (should be 10-40 seconds)"
+        );
+      }
+      if (estimatedDuration < 10) {
+        throw new Error(
+          "Script is too short for a video voiceover (should be 10-40 seconds)"
+        );
+      }
+
       const response = await openai.audio.speech.create({
         model: model,
         voice: voice,
@@ -56,7 +77,7 @@ export const generateAudioTool = tool({
 
       // Generate a unique filename using nanoid
       const filename = `${nanoid()}.mp3`;
-      const path = `shipshow/${filename}`;
+      const path = `shipshow/voiceovers/${filename}`;
 
       // Upload to Vercel Blob
       const blob = await put(path, buffer, {
@@ -64,42 +85,143 @@ export const generateAudioTool = tool({
         contentType: "audio/mpeg",
       });
 
-      console.log(`Generated and uploaded audio file: ${path}`);
+      console.log(`Generated and uploaded voiceover audio: ${path}`);
 
       return {
         audioUrl: blob.url,
-        duration: Math.ceil(text.length / 15), // Rough estimate: 15 chars per second
+        duration: estimatedDuration,
         filename: filename,
         path: path,
+        contentType: "audio/mpeg",
+        name: "voiceover.mp3",
       };
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(`Failed to generate audio: ${error.message}`);
+        throw new Error(`Failed to generate voiceover: ${error.message}`);
       }
-      throw new Error("Failed to generate audio: Unknown error");
+      throw new Error("Failed to generate voiceover: Unknown error");
     }
   },
+});
+
+export const ACCEPTED_ATTACHMENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/hevc",
+  "image/hevc",
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+  "video/ogg",
+  "video/avi",
+  "video/mov",
+  "video/wmv",
+  "video/flv",
+  "video/mpeg",
+  "video/mpg",
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/ogg",
+  "audio/m4a",
+  "audio/aac",
+  "audio/wma",
+] as const;
+
+export const attachmentSchema = z.object({
+  url: z.string(),
+  contentType: z.enum(ACCEPTED_ATTACHMENT_TYPES),
+  name: z.string(),
+});
+
+const messageContentSchema = z
+  .string()
+  .max(5000)
+  .describe(
+    "The full script of the video, it should be a highly detailed script for the video, mention style, timestamps, provide links to images, videos etc if you have (like audio files, images, videos, etc)"
+  );
+
+const textPartSchema = z.object({
+  text: messageContentSchema,
+  type: z.enum(["text"]),
+});
+
+export const userFacingModelsSchema = z.enum([
+  "chat-model-mini",
+  "chat-model-reasoning",
+  "chat-model-reasoning-2",
+  "chat-model-reasoning-3",
+  "auto",
+]);
+
+export const streamChatInputSchema = z.object({
+  id: z.string().uuid(),
+  message: z.object({
+    id: z.string().uuid(),
+    createdAt: z.coerce.date(),
+    role: z.enum(["user"]),
+    content: messageContentSchema,
+    parts: z.array(textPartSchema),
+    experimental_attachments: z.array(attachmentSchema).default([]),
+  }),
+  model: userFacingModelsSchema,
+  // TODO add here fix, retry, etc
+  action: z.enum(["fix", "message"]).default("message"),
 });
 
 // Tool to generate video using Reeroll API
 export const generateVideoTool = tool({
   name: "generate_video",
   description: "Generate a video using Reeroll API",
-  parameters: z.object({
-    script: z
-      .string()
-      .describe(
-        "A highly detailed script for the video, mention style, timestamps, provide links to images, videos etc if you have (like audio files, images, videos, etc)"
-      ),
+  parameters: streamChatInputSchema.pick({
+    message: true,
   }),
-  execute: async ({ script }) => {
+  execute: async ({ message }) => {
     try {
-      // TODO: Implement actual Reeroll API call
-      // For now, return a mock response
-      console.log(`Generating video for script: ${script}`);
+      // Create the input message with proper schema
+      const messageId = crypto.randomUUID();
+      const chatId = crypto.randomUUID();
+
+      const input = {
+        id: chatId,
+        message: {
+          id: messageId,
+          createdAt: new Date(),
+          role: "user" as const,
+          content: message.content,
+          parts: [{ text: message.content, type: "text" as const }],
+          experimental_attachments: message.experimental_attachments,
+        },
+        model: "chat-model-reasoning-3" as const,
+        action: "message" as const,
+      };
+
+      const response = await fetch("https://reeroll.com/api/chat/external", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate video: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Extract video URL from the response
+      const videoUrl =
+        data.videoUrl ||
+        "https://reeroll.com/c/8ad8eb0c-01f8-4fe7-bd52-9b9864f4a449";
+
       return {
-        videoUrl: "https://reeroll.com/c/8ad8eb0c-01f8-4fe7-bd52-9b9864f4a449",
-        duration: 60,
+        videoUrl,
+        chatId,
       };
     } catch (error) {
       if (error instanceof Error) {

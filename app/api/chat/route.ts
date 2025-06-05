@@ -19,6 +19,14 @@ export async function POST(req: Request) {
           "You are a helpful assistant. You can run the agents to get the information you need. You can also use the tools to get the information you need.",
         messages,
         maxRetries: 3,
+        onError: (error) => {
+          console.error(error);
+          dataStream.writeData({
+            status: "error",
+            previousMessageId: messages[messages.length - 1].id,
+            error: error.error instanceof Error ? error.error.message : "Unknown error",
+          });
+        },
         tools: {
           runAgents: tool({
             description: "Run the agents",
@@ -55,7 +63,7 @@ export async function POST(req: Request) {
         },
         onFinish: (result) => {
           console.log(result);
-          
+
           dataStream.writeData({
             status: "completed",
             previousMessageId: messages[messages.length - 1].id,
