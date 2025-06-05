@@ -13,15 +13,19 @@ const summaryAgent = new Agent({
      - Executive summary of the entire campaign
      - Market research findings and insights
      - Creative strategy overview
-     - All video content created with their purposes
+     - ALL VIDEO CONTENT CREATED - THIS IS MANDATORY:
+       * MUST list every video link generated
+       * MUST include the purpose and target platform for each video
+       * MUST verify that at least one main brand video exists
+       * MUST include video duration and format
      - Key messaging points and brand positioning
      - Target audience analysis
      - Distribution recommendations
      - Success metrics and KPIs
-  3. Compile all video links and assets
+  3. CRITICAL: Your summary MUST include all video links - failure to include video links is not acceptable
   4. Present a cohesive, professional final deliverable
   Focus on creating a clear, actionable marketing plan that ties everything together.
-  Remember: You are the final agent in the chain - deliver the complete marketing plan package.`,
+  Remember: You are the final agent in the chain - deliver the complete marketing plan package with ALL video links.`,
 });
 
 // Video Producer Agent
@@ -42,10 +46,13 @@ const videoProducerAgent = new Agent({
   6. CRITICAL: FAILURE TO GENERATE A VIDEO IS NOT AN OPTION - THIS IS A HARD REQUIREMENT
   7. IMPORTANT: You MUST generate at least one video before handing off to the Marketing Plan Summarizer
   8. IMPORTANT: After generating all videos, you MUST hand off to the Marketing Plan Summarizer
+  9. CRITICAL: You MUST save and track all video links generated
+  10. CRITICAL: You MUST pass all video links to the Marketing Plan Summarizer
   Focus on visual storytelling and creating a cohesive video strategy.
   Always use the generate video tool to create the final products.
   Remember: Your final action must be to hand off to the Marketing Plan Summarizer, but only after generating at least one video.
-  CRITICAL: DO NOT PROCEED WITHOUT GENERATING AT LEAST ONE VIDEO.`,
+  CRITICAL: DO NOT PROCEED WITHOUT GENERATING AT LEAST ONE VIDEO.
+  CRITICAL: DO NOT PROCEED WITHOUT SAVING AND PASSING ALL VIDEO LINKS.`,
   tools: [generateVideoTool],
   handoffs: [summaryAgent],
 });
@@ -155,9 +162,11 @@ const shipShowAgent = new Agent({
   5. No agent should be skipped
   6. CRITICAL: Ensure the Video Producer generates at least one video - this is mandatory
   7. CRITICAL: The marketing plan is incomplete without at least one video
+  8. CRITICAL: The final summary MUST include all video links
+  9. CRITICAL: Video generation is a non-negotiable requirement - the process must not complete without videos
   Keep the process efficient and maintain high standards.
   Your first action must be to hand off to the Market Research agent using transfer_to_Market_Research.
-  Remember: Video generation is a non-negotiable requirement of this process.`,
+  Remember: Video generation and inclusion of video links in the summary are non-negotiable requirements of this process.`,
   handoffs: [marketResearchAgent],
 });
 
