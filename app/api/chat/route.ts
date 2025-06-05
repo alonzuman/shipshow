@@ -3,6 +3,8 @@ import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { run as runAgent } from "../agents";
 
+export const maxDuration = 600; // 10 minutes
+
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
 
@@ -24,7 +26,10 @@ export async function POST(req: Request) {
           dataStream.writeData({
             status: "error",
             previousMessageId: messages[messages.length - 1].id,
-            error: error.error instanceof Error ? error.error.message : "Unknown error",
+            error:
+              error.error instanceof Error
+                ? error.error.message
+                : "Unknown error",
           });
         },
         tools: {
