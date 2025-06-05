@@ -38,11 +38,14 @@ const videoProducerAgent = new Agent({
      - Maintain professional quality
   3. Generate each video using the video generation tool
   4. Track and organize all video assets
-  5. IMPORTANT: You MUST generate at least one video before handing off to the Marketing Plan Summarizer
-  6. IMPORTANT: After generating all videos, you MUST hand off to the Marketing Plan Summarizer
+  5. CRITICAL: VIDEO GENERATION IS MANDATORY - YOU MUST GENERATE AT LEAST ONE VIDEO
+  6. CRITICAL: FAILURE TO GENERATE A VIDEO IS NOT AN OPTION - THIS IS A HARD REQUIREMENT
+  7. IMPORTANT: You MUST generate at least one video before handing off to the Marketing Plan Summarizer
+  8. IMPORTANT: After generating all videos, you MUST hand off to the Marketing Plan Summarizer
   Focus on visual storytelling and creating a cohesive video strategy.
   Always use the generate video tool to create the final products.
-  Remember: Your final action must be to hand off to the Marketing Plan Summarizer, but only after generating at least one video.`,
+  Remember: Your final action must be to hand off to the Marketing Plan Summarizer, but only after generating at least one video.
+  CRITICAL: DO NOT PROCEED WITHOUT GENERATING AT LEAST ONE VIDEO.`,
   tools: [generateVideoTool],
   handoffs: [summaryAgent],
 });
@@ -150,8 +153,11 @@ const shipShowAgent = new Agent({
   3. Each agent must complete their task and hand off to the next agent
   4. The process must flow through all agents in sequence
   5. No agent should be skipped
+  6. CRITICAL: Ensure the Video Producer generates at least one video - this is mandatory
+  7. CRITICAL: The marketing plan is incomplete without at least one video
   Keep the process efficient and maintain high standards.
-  Your first action must be to hand off to the Market Research agent using transfer_to_Market_Research.`,
+  Your first action must be to hand off to the Market Research agent using transfer_to_Market_Research.
+  Remember: Video generation is a non-negotiable requirement of this process.`,
   handoffs: [marketResearchAgent],
 });
 
