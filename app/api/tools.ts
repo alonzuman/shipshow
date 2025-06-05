@@ -200,27 +200,20 @@ export const generateVideoTool = tool({
         action: "message" as const,
       };
 
-      const response = await fetch("https://reeroll.com/api/chat/external", {
+      // Fire and forget the API call
+      fetch("https://reeroll.com/api/chat/external", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ input }),
+      }).catch((error) => {
+        console.error("Failed to send video generation request:", error);
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to generate video: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      // Extract video URL from the response
-      const videoUrl =
-        data.videoUrl ||
-        "https://reeroll.com/c/8ad8eb0c-01f8-4fe7-bd52-9b9864f4a449";
-
+      // Return the video URL immediately
       return {
-        videoUrl,
+        videoUrl: `https://reeroll.com/c/${chatId}`,
         chatId,
       };
     } catch (error) {
