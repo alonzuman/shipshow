@@ -18,6 +18,7 @@ export async function POST(req: Request) {
         system:
           "You are a helpful assistant. You can run the agents to get the information you need. You can also use the tools to get the information you need.",
         messages,
+        maxRetries: 3,
         tools: {
           runAgents: tool({
             description: "Run the agents",
