@@ -24,13 +24,13 @@ interface StreamEvent {
 }
 
 const markdownComponents: Components = {
-  a: ({ node, ...props }) => {
+  a: ({ ...props }) => {
     return <a {...props} className="text-blue-500" target="_blank" />;
   },
-  p: ({ node, ...props }) => {
+  p: ({ ...props }) => {
     return <p {...props} className="mb-2" />;
   },
-  ul: ({ node, ...props }) => {
+  ul: ({ ...props }) => {
     return <ul {...props} className="list-disc pl-4" />;
   },
 };
@@ -43,7 +43,7 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="p-4 my-8">
+    <div className="p-4">
       {data?.map((item, index) => {
         const streamEvent = item as unknown as StreamEvent;
 
@@ -108,23 +108,32 @@ export default function Page() {
       })}
       {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
       <div className="mt-4">
-        {status}
-        <input
-          value={input}
-          onChange={(event) => {
-            setInput(event.target.value);
-          }}
-          onKeyDown={async (event) => {
-            if (event.key === "Enter") {
-              append({
-                content: data ? `${JSON.stringify(data)}\n\n\n${input}` : input,
-                role: "user",
-              });
-              setInput("");
-            }
-          }}
-          className="w-full p-2 border rounded"
-        />
+        {status === "ready" ? (
+          <input
+            value={input}
+            onChange={(event) => {
+              setInput(event.target.value);
+            }}
+            onKeyDown={async (event) => {
+              if (event.key === "Enter") {
+                append({
+                  content: data
+                    ? `${JSON.stringify(data)}\n\n\n${input}`
+                    : input,
+                  role: "user",
+                });
+                setInput("");
+              }
+            }}
+            className="w-full p-2 border rounded"
+          />
+        ) : status === "error" ? (
+          "Ugh it broke again"
+        ) : status === "submitted" ? (
+          "Thinking..."
+        ) : (
+          "Here should be a fancy animation..."
+        )}
       </div>
     </div>
   );

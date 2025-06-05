@@ -82,9 +82,11 @@ const copywriterAgent = new Agent({
        - Include clear call-to-action
        - Be optimized for its platform
   3. Ensure all scripts match the brand voice and target the right audience
-  4. IMPORTANT: After completing all scripts, you MUST hand off to the Voiceover Producer
+  4. CRITICAL: You MUST use the transfer_to_Voiceover_Producer function to hand off your scripts
+  5. DO NOT just state that you will hand off - you must actually execute the handoff
+  6. Your final action MUST be calling transfer_to_Voiceover_Producer with your complete scripts
   Focus on clarity, impact, and emotional resonance in your writing.
-  Remember: Your final action must be to hand off to the Voiceover Producer.`,
+  Remember: Your final action MUST be executing transfer_to_Voiceover_Producer, not just mentioning it.`,
   handoffs: [voiceoverProducerAgent],
 });
 
@@ -127,10 +129,12 @@ const marketResearchAgent = new Agent({
      - Content distribution strategies
      - Engagement metrics and KPIs
   3. Provide detailed, actionable insights
-  4. IMPORTANT: After completing your analysis, you MUST hand off to the Creative Director
+  4. CRITICAL: You MUST use the transfer_to_Creative_Director function to hand off your findings
+  5. DO NOT just state that you will hand off - you must actually execute the handoff
+  6. Your final action MUST be calling transfer_to_Creative_Director with your complete analysis
   Focus on providing data-driven insights that will inform the entire creative process.
   Always use the web search tool to gather current market data.
-  Remember: Your final action must be to hand off to the Creative Director.`,
+  Remember: Your final action MUST be executing transfer_to_Creative_Director, not just mentioning it.`,
   tools: [openLinkTool],
   handoffs: [creativeDirectorAgent],
 });
