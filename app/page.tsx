@@ -260,7 +260,9 @@ export default function Page() {
                 setInput("");
               }
             }}
-            className="w-full p-2 border rounded"
+            className={`w-full p-2 border border-gray-400 bg-black max-w-2xl mx-auto rounded-xl ${
+              data ? "fixed bottom-4" : ""
+            }`}
           />
         ) : status === "error" ? (
           <div className="flex items-center gap-2">
